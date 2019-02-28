@@ -44,7 +44,10 @@ private fun processFile(currentFile: String) {
             slideShow.add(Slide(listOf(hPhoto.id), hPhoto.tags.toSet()))
         }
 
-        vPhotos.chunked(2).forEach { chunk ->
+        vPhotos.sortByDescending { it.tags.size }
+        val chunks = vPhotos.chunked(2)
+
+        chunks.forEach { chunk ->
             if (chunk.size == 2) {
                 slideShow.add(Slide(listOf(chunk[0].id, chunk[1].id), chunk[0].tags.toSet() + chunk[1].tags.toSet()))
             }
