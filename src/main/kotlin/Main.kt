@@ -9,11 +9,14 @@ fun main(args: Array<String>) {
 
     listOf(
         "a_example",
+//        "b_lovely_landscapes",
+//        "d_pet_pictures", "e_shiny_selfies",
         "c_memorable_moments"
     ).forEach { processFile(it) }
 }
 
 private fun processFile(currentFile: String) {
+    println(currentFile)
     File("src/main/resources/$currentFile.txt").useLines {
         val inputList = it.toList()
 
@@ -70,7 +73,7 @@ private fun processFile(currentFile: String) {
                 usedIds += p1.id
                 usedIds += p2!!.id
                 vPhotosPairs += Pair(p1, p2!!)
-                println(p2BestSize)
+//                println(p2BestSize)
             }
         }
 
@@ -84,6 +87,7 @@ private fun processFile(currentFile: String) {
         /********************** OUTPUT GENERATION ***********************************/
         File("src/main/resources/$currentFile.out.txt").delete()
         File("src/main/resources/$currentFile.out.txt").appendWithNewLine(slideShow.size.toString())
+        slideShow.sortByDescending { s -> s.tags.size }
         slideShow.forEach { slide ->
             if (slide.photoIds.size == 2)
                 File("src/main/resources/$currentFile.out.txt").appendWithNewLine("${slide.photoIds[0]} ${slide.photoIds[1]}")
