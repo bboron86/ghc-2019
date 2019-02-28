@@ -44,13 +44,38 @@ private fun processFile(currentFile: String) {
             slideShow.add(Slide(listOf(hPhoto.id), hPhoto.tags.toSet()))
         }
 
-        vPhotos.sortByDescending { v -> v.tags.size }
-        val chunks = vPhotos.chunked(2)
 
-        chunks.forEach { chunk ->
-            if (chunk.size == 2) {
-                slideShow.add(Slide(listOf(chunk[0].id, chunk[1].id), chunk[0].tags.toSet() + chunk[1].tags.toSet()))
+        val vPhotosPairs: MutableList<Pair<VerticalPhoto, VerticalPhoto>> = mutableListOf()
+        val usedIds = mutableListOf<Int>()
+        vPhotos.forEach v1@{ vPhoto ->
+            if (usedIds.contains(vPhoto.id)) return@v1
+
+            val p1 = vPhoto
+            var p2BestSize = 0
+            var p2: VerticalPhoto? = null
+
+            vPhotos
+                .filter { v -> v.id != vPhoto.id }
+                .forEach v2@{ v2Photo ->
+                    if (usedIds.contains(v2Photo.id)) return@v2
+
+                    val tmpSet = p1.tags.toSet() + v2Photo.tags.toSet()
+                    if (tmpSet.size > p2BestSize) {
+                        p2BestSize = tmpSet.size
+                        p2 = v2Photo
+                    }
+                }
+
+            if (p2 != null) {
+                usedIds += p1.id
+                usedIds += p2!!.id
+                vPhotosPairs += Pair(p1, p2!!)
+                println(p2BestSize)
             }
+        }
+
+        vPhotosPairs.forEach { pair ->
+            slideShow.add(Slide(listOf(pair.first.id, pair.second.id), pair.first.tags.toSet() + pair.second.tags.toSet()))
         }
 
         println(slideShow)
