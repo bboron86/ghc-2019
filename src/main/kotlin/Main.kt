@@ -34,9 +34,9 @@ private fun processFile(currentFile: String) {
             val tags = line.splitByBlank().filterIndexed { id, s -> id > 1 }
 
             if (line.startsWith('H')) {
-                hPhotos.add(HorizontalPhoto(index - 1, tags))
+                hPhotos.add(HorizontalPhoto(index - 1, tags.map { t -> t.hashCode() }))
             } else if (line.startsWith('V')) {
-                vPhotos.add(VerticalPhoto(index - 1, tags))
+                vPhotos.add(VerticalPhoto(index - 1, tags.map { t -> t.hashCode() }))
             }
         }
 
@@ -96,10 +96,11 @@ private fun processFile(currentFile: String) {
             slideShow.filter { s -> s.id != slide.id }.forEach s2@{ slide2 ->
                 if (outputIds.contains(slide2.id)) return@s2
 
+//                val maxCommon = slide.tags.intersect(slide2.tags).size > 0
                 val maxCommon = (slide.tags.size + slide2.tags.size) - (slide.tags.toSet() + slide2.tags.toSet()).size
-                if (maxCommon > bestCommon) {
-                    bestCommon = maxCommon
+                if (maxCommon > 0) {
                     bestSlide = slide2
+                    return@s2
                 }
             }
             outputSlideshow.add(slide)
@@ -123,10 +124,10 @@ private fun processFile(currentFile: String) {
     }
 }
 
-data class HorizontalPhoto(val id: Int, val tags: List<String>)
+data class HorizontalPhoto(val id: Int, val tags: List<Int>)
 
-data class VerticalPhoto(val id: Int, val tags: List<String>)
+data class VerticalPhoto(val id: Int, val tags: List<Int>)
 
-data class Slide(val id: Int, val photoIds: List<Int>, val tags: Set<String>)
+data class Slide(val id: Int, val photoIds: List<Int>, val tags: Set<Int>)
 
 fun File.appendWithNewLine(text: String) = this.appendText("$text\n")
