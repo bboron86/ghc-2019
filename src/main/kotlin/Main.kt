@@ -1,24 +1,24 @@
-import cityplan.CityBuilder
 import cityplan.splitByBlank
 import java.io.File
-import kotlin.math.max
-
-private const val FILE = "src/main/resources/a_example"
+import java.util.Comparator
 
 
 fun main(args: Array<String>) {
 
     listOf(
-//        "a_example",
-        "b_lovely_landscapes"
+//        "a_example", "c_memorable_moments", "b_lovely_landscapes"
 //        "d_pet_pictures"
-//        "e_shiny_selfies",
-//        "c_memorable_moments"
+        "e_shiny_selfies"
     ).forEach { processFile(it) }
 }
 
+data class Photo(val id: Int, val type: Char)
+
 private fun processFile(currentFile: String) {
     println(currentFile)
+
+    val photoMap = HashMap<String, MutableList<Photo>>()
+
     File("src/main/resources/$currentFile.txt").useLines {
         val inputList = it.toList()
 
@@ -33,84 +33,40 @@ private fun processFile(currentFile: String) {
 
             val tags = line.splitByBlank().filterIndexed { id, s -> id > 1 }
 
-            if (line.startsWith('H')) {
-                hPhotos.add(HorizontalPhoto(index - 1, tags.map { t -> t.hashCode() }))
-            } else if (line.startsWith('V')) {
-                vPhotos.add(VerticalPhoto(index - 1, tags.map { t -> t.hashCode() }))
+            tags.forEach { t ->
+                photoMap.putIfAbsent(t, mutableListOf())
+                photoMap[t]!!.add(Photo(index-1, line.first()))
             }
         }
 
-//        println(hPhotos)
-//        println(vPhotos)
+//        println(photoMap)
 
         /******************* SLIDE SHOW CREATION ************************************/
         val slideShow = mutableListOf<Slide>()
-        hPhotos.forEach { hPhoto ->
-            slideShow.add(Slide(slideShow.size, listOf(hPhoto.id), hPhoto.tags.toSet()))
-        }
 
-        val vPhotosPairs: MutableList<Pair<VerticalPhoto, VerticalPhoto>> = mutableListOf()
+        val sortedMap = photoMap.toList().sortedByDescending { (_, v) -> v.size }.toMap()
+
         val usedIds = mutableListOf<Int>()
-        vPhotos.forEach v1@{ vPhoto ->
-            if (usedIds.contains(vPhoto.id)) return@v1
+        var idx = 0
 
-            println("${vPhoto.id} of ${vPhotos.size}")
-            val p1 = vPhoto
-            var p2BestSize = 0
-            var p2: VerticalPhoto? = null
+        sortedMap.forEach { t, pics ->
+            val parts = pics
+                .filterNot { p -> usedIds.contains(p.id) }
+                .partition { p -> p.type == 'H' }
 
-            vPhotos
-                .filter { v -> v.id != vPhoto.id && !usedIds.contains(v.id) }
-                .forEach v2@{ v2Photo ->
-                    val tmpSet = p1.tags.toSet() + v2Photo.tags.toSet()
-                    if (tmpSet.size > p2BestSize) {
-                        p2BestSize = tmpSet.size
-                        p2 = v2Photo
-                    }
+            parts.first.forEach { hPic ->
+                slideShow.add(Slide(idx++, listOf(hPic.id)))
+                usedIds.add(hPic.id)
+            }    // H
+            parts.second.chunked(2).forEach { vChunk ->
+                if (vChunk.size == 2) {
+                    slideShow.add(Slide(idx++, listOf(vChunk[0].id, vChunk[1].id)))
+                    usedIds.add(vChunk[0].id)
+                    usedIds.add(vChunk[1].id)
                 }
-
-            if (p2 != null) {
-                usedIds += p1.id
-                usedIds += p2!!.id
-                vPhotosPairs += Pair(p1, p2!!)
-                println(p2BestSize)
-            }
+            } // V
+            println(slideShow.size)
         }
-
-        vPhotosPairs.forEach { pair ->
-            slideShow.add(Slide(slideShow.size, listOf(pair.first.id, pair.second.id), pair.first.tags.toSet() + pair.second.tags.toSet()))
-        }
-
-        println(slideShow)
-
-        slideShow.sortByDescending { s -> s.tags.size }
-        val outputSlideshow = mutableListOf<Slide>()
-        val outputIds: MutableList<Int> = mutableListOf()
-        slideShow.forEach s1@{ slide ->
-            if (outputIds.contains(slide.id)) return@s1
-
-            println("${slide.id} of ${slideShow.size}")
-            var bestCommon = 0
-            var bestSlide: Slide? = null
-
-            slideShow.filter { s -> s.id != slide.id }.forEach s2@{ slide2 ->
-                if (outputIds.contains(slide2.id)) return@s2
-
-//                val maxCommon = slide.tags.intersect(slide2.tags).size > 0
-                val maxCommon = (slide.tags.size + slide2.tags.size) - (slide.tags.toSet() + slide2.tags.toSet()).size
-                if (maxCommon > 0) {
-                    bestSlide = slide2
-                    return@s2
-                }
-            }
-            outputSlideshow.add(slide)
-            outputIds.add(slide.id)
-            bestSlide?.let { bs ->
-                outputSlideshow.add(bs)
-                outputIds.add(bs.id)
-            }
-        }
-
 
         /********************** OUTPUT GENERATION ***********************************/
         File("src/main/resources/$currentFile.out.txt").delete()
@@ -128,6 +84,6 @@ data class HorizontalPhoto(val id: Int, val tags: List<Int>)
 
 data class VerticalPhoto(val id: Int, val tags: List<Int>)
 
-data class Slide(val id: Int, val photoIds: List<Int>, val tags: Set<Int>)
+data class Slide(val id: Int, val photoIds: List<Int>, val tags: Set<Int> = emptySet())
 
 fun File.appendWithNewLine(text: String) = this.appendText("$text\n")
