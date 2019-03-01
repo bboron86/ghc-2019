@@ -11,7 +11,6 @@ fun main(args: Array<String>) {
     ).forEach { processFile(it) }
 }
 
-data class Photo(val id: Int, val type: Char, val tags: Array<String>)
 
 private fun processFile(currentFile: String) {
     println(currentFile)
@@ -51,7 +50,6 @@ private fun processFile(currentFile: String) {
 
             parts.first.forEach { hPic ->
                 val picSlide = Slide(idx++, listOf(hPic.id), hPic.tags.toSet())
-//                slideShow.add(picSlide)
                 usedIds.add(hPic.id)
                 picSlide.tags.forEach { t ->
                     slideMap.putIfAbsent(t, mutableListOf())
@@ -61,7 +59,6 @@ private fun processFile(currentFile: String) {
             parts.second.chunked(2).forEach { vChunk ->
                 if (vChunk.size == 2) {
                     val chunkSlide = Slide(idx++, listOf(vChunk[0].id, vChunk[1].id), vChunk[0].tags.toSet() + vChunk[1].tags.toSet())
-//                    slideShow.add(chunkSlide)
                     usedIds.add(vChunk[0].id)
                     usedIds.add(vChunk[1].id)
                     chunkSlide.tags.forEach { t ->
@@ -72,8 +69,6 @@ private fun processFile(currentFile: String) {
             } // V
             println(idx)
         }
-
-
 
         /********************** OUTPUT GENERATION ***********************************/
         File("src/main/resources/$currentFile.out.txt").delete()
@@ -97,9 +92,7 @@ private fun processFile(currentFile: String) {
     }
 }
 
-data class HorizontalPhoto(val id: Int, val tags: List<Int>)
-
-data class VerticalPhoto(val id: Int, val tags: List<Int>)
+data class Photo(val id: Int, val type: Char, val tags: Array<String>)
 
 data class Slide(val id: Int, val photoIds: List<Int>, val tags: Set<String> = emptySet())
 
